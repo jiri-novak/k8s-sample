@@ -88,6 +88,7 @@
         -   [Application Gateway Ingress Controller](https://azure.github.io/application-gateway-kubernetes-ingress/)
         -   [Kubernetes Event Driven Autoscaler (KEDA)](https://keda.sh/docs/2.8/scalers/)
         -   [Cert-Manager](https://cert-manager.io/docs/installation/helm/) (installed through `helm`)
+        ![](./k8s-addons.png)
 
 -   Some possibly usefull bicep related links:
 
