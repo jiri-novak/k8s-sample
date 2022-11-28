@@ -1,0 +1,24 @@
+---
+# Source: testapp/templates/hpa.yaml
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: testapp
+  labels:
+    helm.sh/chart: testapp-0.1.0
+    app.kubernetes.io/name: testapp
+    app.kubernetes.io/instance: testapp
+    app.kubernetes.io/version: "2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: testapp
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 50

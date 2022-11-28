@@ -556,19 +556,47 @@ https://k8s-sample.ga/aci/swagger/index.html
 
 ## Create helm chart for our application
 
-```bash
-helm create testapp
-helm install testapp testapp/ --values testapp/values.yaml
-helm ls
-NAME    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
-testapp default         0               2022-11-28 11:00:18.4492559 +0100 CET   deployed        testapp-0.1.0   1.1
-helm upgrade testapp testapp/ --values testapp/values.yaml
-helm ls
-NAME    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
-testapp default         1               2022-11-28 11:00:18.4492559 +0100 CET   deployed        testapp-0.1.0   2.0
-helm rollback testapp 0 (=REVISION)
-helm ls
-NAME    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
-testapp default         0               2022-11-28 11:00:18.4492559 +0100 CET   deployed        testapp-0.1.0   1.1
-helm uninstall testapp
-```
+-   Create helm chart:
+
+    -   Generate skeleton
+        ```bash
+        helm create testapp
+        ```
+    -   Adjust the templates & `chart.yaml`/`values.yaml`
+    -   Test it with generating the final k8s resources with:
+        ```bash
+        helm template testapp testapp/ -f testapp/values.yaml --output-dir testapp-manifest/
+        ```
+
+-   Install
+
+    ```bash
+    helm install testapp testapp/ --values testapp/values.yaml
+    helm ls
+    NAME    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
+    testapp default         0               2022-11-28 11:00:18.4492559 +0100 CET   deployed        testapp-0.1.0   1.1
+    ```
+
+-   Upgrade
+
+    ```bash
+    helm upgrade testapp testapp/ --values testapp/values.yaml
+    helm ls
+    NAME NAMESPACE REVISION UPDATED STATUS CHART APP VERSION
+    testapp default 1 2022-11-28 11:00:18.4492559 +0100 CET deployed testapp-0.1.0 2.0
+    ```
+
+-   Rollback
+
+    ```bash
+    helm rollback testapp 0 (=REVISION)
+    helm ls
+    NAME NAMESPACE REVISION UPDATED STATUS CHART APP VERSION
+    testapp default 0 2022-11-28 11:00:18.4492559 +0100 CET deployed testapp-0.1.0 1.1
+    ```
+
+-   Uninstall
+
+    ```bash
+    helm uninstall testapp
+    ```

@@ -1,0 +1,48 @@
+---
+# Source: testapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testapp
+  labels:
+    helm.sh/chart: testapp-0.1.0
+    app.kubernetes.io/name: testapp
+    app.kubernetes.io/instance: testapp
+    app.kubernetes.io/version: "2.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: testapp
+      app.kubernetes.io/instance: testapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: testapp
+        app.kubernetes.io/instance: testapp
+    spec:
+      serviceAccountName: testapp
+      securityContext:
+        {}
+      containers:
+        - name: testapp
+          securityContext:
+            {}
+          image: "acrsamplek8s.azurecr.io/testapp:2.0"
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+          resources:
+            {}
+      nodeSelector:
+        kubernetes.io/os: linux
