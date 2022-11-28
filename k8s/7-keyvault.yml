@@ -1,0 +1,109 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: testapp
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: testapp
+    template:
+        metadata:
+            labels:
+                app: testapp
+        spec:
+            nodeSelector:
+                "kubernetes.io/os": linux
+            containers:
+                - name: testapp
+                  image: acrsamplek8s.azurecr.io/testapp:latest
+                  imagePullPolicy: "Always"
+                  resources:
+                      requests:
+                          cpu: 200m
+                          memory: 256Mi
+                      limits:
+                          cpu: 500m
+                          memory: 512Mi
+                  ports:
+                      - containerPort: 80
+                        name: http
+                  readinessProbe:
+                      httpGet:
+                          path: /health
+                          port: 80
+                      periodSeconds: 3
+                      timeoutSeconds: 1
+                  volumeMounts:
+                      - name: keyvault-secrets
+                        mountPath: "/mnt/keyvault-secrets"
+                        readOnly: true
+            volumes:
+                - name: keyvault-secrets
+                  csi:
+                      driver: secrets-store.csi.k8s.io
+                      readOnly: true
+                      volumeAttributes:
+                          secretProviderClass: "keyvault-secrets-provider"
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: testapp
+spec:
+    selector:
+        app: testapp
+    ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: testapp
+    annotations:
+        kubernetes.io/ingress.class: azure/application-gateway
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        cert-manager.io/acme-challenge-type: http01
+spec:
+    tls:
+        - hosts:
+              - k8s-sample.ga
+          secretName: k8s-sample-ga-tls
+    rules:
+        - host: k8s-sample.ga
+          http:
+              paths:
+                  - path: "/"
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: testapp
+                            port:
+                                number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+    name: testapp
+spec:
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: testapp
+    minReplicas: 1
+    maxReplicas: 3
+    metrics:
+        - type: Resource
+          resource:
+              name: cpu
+              target:
+                  type: Utilization
+                  averageUtilization: 50
+        - type: Resource
+          resource:
+              name: memory
+              target:
+                  type: Utilization
+                  averageUtilization: 80

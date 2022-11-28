@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: testapp
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: testapp
+    template:
+        metadata:
+            labels:
+                app: testapp
+        spec:
+            nodeSelector:
+                "kubernetes.io/os": linux
+            containers:
+                - name: testapp
+                  image: acrsamplek8s.azurecr.io/testapp:1.1
+                  imagePullPolicy: "Always"
+                  resources:
+                      requests:
+                          cpu: 200m
+                          memory: 256Mi
+                      limits:
+                          cpu: 500m
+                          memory: 512Mi
+                  ports:
+                      - containerPort: 80
+                        name: http
+                  readinessProbe:
+                      httpGet:
+                          path: /health
+                          port: 80
+                      periodSeconds: 3
+                      timeoutSeconds: 1

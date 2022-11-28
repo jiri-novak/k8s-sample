@@ -1,0 +1,13 @@
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+    name: cptl-servicebus-trigger-auth
+    namespace: cptl
+    labels:
+        app: cptl
+        keda: trigger-auth
+spec:
+    secretTargetRef:
+        - parameter: connection
+          name: cptl-secrets
+          key: queue__azure__serviceBus__connectionString

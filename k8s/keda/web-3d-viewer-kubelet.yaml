@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: web-3d-viewer-aci
+    namespace: cptl
+    labels:
+        service: web-3d-viewer
+        context: aci
+        app: cptl
+spec:
+    selector:
+        matchLabels:
+            service: web-3d-viewer
+            context: aci
+            app: cptl
+    template:
+        metadata:
+            name: web-3d-viewer-aci
+            namespace: cptl
+            labels:
+                service: web-3d-viewer
+                context: aci
+                app: cptl
+        spec:
+            nodeSelector:
+                kubernetes.io/role: agent
+                beta.kubernetes.io/os: windows
+                type: virtual-kubelet
+            tolerations:
+                - key: virtual-kubelet.io/provider
+                  operator: Exists
+                - key: azure.com/aci
+                  effect: NoSchedule
+            containers:
+                # TOOLLIBRARY SERVICE (WIDGET)
+                - name: web-3d-viewer
+                  image: $REPOSITORY_NAME/cptl/occ/viewer:latest
+                  imagePullPolicy: Always
+                  envFrom:
+                      - configMapRef:
+                            name: web-3d-viewer-configmap
+                  ports:
+                      - containerPort: 80
+                  resources:
+                      requests:
+                          memory: '4Gi'
+                          cpu: '1.0'
+                      limits:
+                          memory: '4Gi'
+                          cpu: '1.0'
+            imagePullSecrets:
+                - name: regcred

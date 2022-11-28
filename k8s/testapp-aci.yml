@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: testapp-aci
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: testapp-aci
+    template:
+        metadata:
+            labels:
+                app: testapp-aci
+        spec:
+            nodeSelector:
+                kubernetes.io/role: agent
+                beta.kubernetes.io/os: linux
+                type: virtual-kubelet
+            tolerations:
+                - key: virtual-kubelet.io/provider
+                  operator: Exists
+                - key: azure.com/aci
+                  effect: NoSchedule
+            containers:
+                - name: testapp-aci
+                  image: acrsamplek8s.azurecr.io/testapp:latest
+                  imagePullPolicy: "Always"
+                  resources:
+                      requests:
+                          cpu: 500m
+                          memory: 512Mi
+                      limits:
+                          cpu: 500m
+                          memory: 512Mi
+                  env:
+                      - name: ASPNETCORE_PATHBASE
+                        value: /aci/
+                  ports:
+                      - containerPort: 80
+                        name: http
+                  readinessProbe:
+                      httpGet:
+                          path: /health
+                          port: 80
+                      periodSeconds: 3
+                      timeoutSeconds: 1
+                  volumeMounts:
+                      - name: keyvault-secrets
+                        mountPath: "/mnt/keyvault-secrets"
+                        readOnly: true
+            imagePullSecrets:
+                - name: regcred
+            volumes:
+                - name: keyvault-secrets
+                  projected:
+                      sources:
+                          - secret:
+                                name: testapp-aci-secrets
+                                items:
+                                    - key: Sample
+                                      path: Sample
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: testapp-aci
+spec:
+    selector:
+        app: testapp-aci
+    ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: testapp-aci
+    annotations:
+        kubernetes.io/ingress.class: azure/application-gateway
+        cert-manager.io/cluster-issuer: letsencrypt-prod
+        cert-manager.io/acme-challenge-type: http01
+        appgw.ingress.kubernetes.io/backend-path-prefix: "/"
+spec:
+    tls:
+        - hosts:
+              - k8s-sample.ga
+          secretName: k8s-sample-ga-tls
+    rules:
+        - host: k8s-sample.ga
+          http:
+              paths:
+                  - path: "/aci/"
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: testapp-aci
+                            port:
+                                number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+    name: testapp-aci
+spec:
+    scaleTargetRef:
+        apiVersion: apps/v1
+        kind: Deployment
+        name: testapp-aci
+    minReplicas: 1
+    maxReplicas: 3
+    metrics:
+        - type: Resource
+          resource:
+              name: cpu
+              target:
+                  type: Utilization
+                  averageUtilization: 50
+        - type: Resource
+          resource:
+              name: memory
+              target:
+                  type: Utilization
+                  averageUtilization: 80

@@ -1,0 +1,23 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+    name: web-3d-viewer-aci-scaler
+    namespace: cptl
+    labels:
+        service: web-3d-viewer
+        context: aci
+        app: cptl
+spec:
+    scaleTargetRef:
+        name: web-3d-viewer-aci
+    pollingInterval: 30
+    cooldownPeriod: 300
+    minReplicaCount: 0
+    maxReplicaCount: 8
+    triggers:
+        - type: azure-servicebus
+          metadata:
+              queueName: jobs.web3dviewer.bson
+              messageCount: "20"
+          authenticationRef:
+              name: cptl-servicebus-trigger-auth
